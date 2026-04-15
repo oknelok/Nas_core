@@ -1,0 +1,19 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - simple_oauth
+    - serialization
+    - user
+    - webform_rest
+id: webform_rest_fields
+plugin_id: webform_rest_fields
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - oauth2
+    - cookie

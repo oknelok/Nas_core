@@ -1,0 +1,18 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - simple_oauth
+    - serialization
+    - webform
+id: entity.webform
+plugin_id: 'entity:webform'
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - oauth2
+    - cookie

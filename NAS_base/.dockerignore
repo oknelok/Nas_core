@@ -1,0 +1,7 @@
+drupal/vendor
+drupal/web/sites/default/files
+drupal/web/sites/default/settings.php
+drupal/web/sites/default/services.yml
+.env
+.git
+.gitignore
