@@ -106,6 +106,33 @@ docker compose exec php vendor/bin/drush {command}
 
 ---
 
+### nas_configure_backend
+
+Collect required backend configuration values and write them to `NAS_base/.env` and the backend section of `NAS/.env`.
+
+**When to use:** Before the first `nas_install`. Whenever backend env values are missing or empty. Safe to re-run — never overwrites existing non-empty values.
+
+**Required values to collect:**
+
+| Variable | Default | Ask user? |
+|----------|---------|-----------|
+| `DB_HOST` | `mariadb` | Only if no default accepted |
+| `DB_PORT` | `3306` | Only if no default accepted |
+| `DB_NAME` | `drupal` | Only if no default accepted |
+| `DB_USER` | `drupal` | Only if no default accepted |
+| `DB_PASSWORD` | *(none)* | Yes — always |
+| `DB_ROOT_PASSWORD` | *(none)* | Yes — always |
+| `DRUPAL_ROOT` | `./drupal` | Only if no default accepted |
+
+**Process:**
+
+1. Read existing `NAS_base/.env` if present — skip any variable that already has a non-empty value
+2. For each missing or empty variable, ask the user (offer the default where one exists)
+3. Write all values to `NAS_base/.env`
+4. Mirror all `DB_*` variables and `DRUPAL_ROOT` into the backend section of `NAS/.env` (create or update)
+
+---
+
 ### nas_logs
 
 Retrieve recent logs from NAS Stack containers.
