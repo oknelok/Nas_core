@@ -14,6 +14,10 @@ docker compose exec php vendor/bin/drush config:import --partial --source=/tmp/n
 
 echo "==> [NAS][7/7] Importing custom config overrides..."
 docker compose cp yml_configs/custom/. php:/tmp/nas_custom_configs/
+for yml in yml_configs/custom/*.yml; do
+    config_name=$(basename "$yml" .yml)
+    docker compose exec php vendor/bin/drush config:delete "$config_name" --yes 2>/dev/null || true
+done
 docker compose exec php vendor/bin/drush config:import --partial --source=/tmp/nas_custom_configs --yes
 
 echo "==> [NAS][7/7] Enabling maestro_task_console view..."
