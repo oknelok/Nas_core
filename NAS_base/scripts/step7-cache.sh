@@ -12,6 +12,10 @@ echo "==> [NAS][7/7] Importing REST resource configs..."
 docker compose cp yml_configs/. php:/tmp/nas_rest_configs/
 docker compose exec php vendor/bin/drush config:import --partial --source=/tmp/nas_rest_configs --yes
 
+echo "==> [NAS][7/7] Importing custom config overrides..."
+docker compose cp yml_configs/custom/. php:/tmp/nas_custom_configs/
+docker compose exec php vendor/bin/drush config:import --partial --source=/tmp/nas_custom_configs --yes
+
 echo "==> [NAS][7/7] Enabling maestro_task_console view..."
 docker compose exec php vendor/bin/drush views:enable maestro_views_based_task_console
 
