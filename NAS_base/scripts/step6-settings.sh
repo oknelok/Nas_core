@@ -17,7 +17,7 @@ docker compose exec php bash -c "cat >> $SETTINGS <<'EOF'
 // NAS Stack additions
 \$settings['file_chmod_directory'] = 0775;
 \$settings['file_chmod_file'] = 0664;
-\$settings['trusted_host_patterns'] = ['^localhost$'];
+\$settings['trusted_host_patterns'] = ['^localhost$', '^nginx$'];
 EOF"
 
 docker compose exec php chmod 444 "$SETTINGS"
