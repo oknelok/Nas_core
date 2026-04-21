@@ -316,6 +316,22 @@ handler: my_module_batch_function_name
 # data block not required for basic batch functions
 ```
 
+**MaestroBatchFunction PHP signature (authoritative):**
+```php
+/**
+ * @param int $processID
+ *   The Maestro process ID.
+ * @param int $queueID
+ *   The Maestro queue ID.
+ */
+function my_module_batch_function_name($processID, $queueID) {
+  // ... do work ...
+  return TRUE; // TRUE = task complete; FALSE = keep task open (async)
+}
+```
+
+Parameters are `$processID` and `$queueID` (both int). Return `TRUE` to signal completion to the engine, `FALSE` to leave the task open for async completion. Do NOT use `MaestroEngine::TASK_COMPLETION_NORMAL` — the return value is a plain boolean. Source: `maestro_dummy_batch_function` in `maestro_utilities/maestro_utilities.module`.
+
 **MaestroContentType:**
 ```yaml
 # handler at task level — /node/add/{bundle}?maestro=1
