@@ -180,3 +180,235 @@ docker compose logs --tail={lines} {service}
 3. nas_logs   service=nginx            # look for 404/403 patterns
 4. nas_step   step={failed_step}       # re-run the failed step
 ```
+
+---
+
+## Maestro Domain Reference
+
+> Maestro V4+ and Webform v6 only. All task types, schema keys, and patterns below are authoritative for these versions.
+
+---
+
+### Task Type Inventory
+
+**Core task types** (`src/Plugin/EngineTasks/`):
+
+| Plugin ID | Interactive | Purpose |
+|---|---|---|
+| `MaestroStart` | No | Workflow entry point — always the first task |
+| `MaestroEnd` | No | Terminates the workflow process |
+| `MaestroInteractive` | Yes | Human task with a custom PHP handler form; modal or full-page |
+| `MaestroContentType` | Yes | Create or edit a Drupal content node inside the workflow |
+| `MaestroManualWeb` | Yes | Directs the assigned user to an internal or external URL |
+| `MaestroBatchFunction` | No | Calls a PHP batch function; supports async completion status returns |
+| `MaestroIf` | No | Conditional branch — by variable comparison or last task status |
+| `MaestroAnd` | No | Sync gate — waits for ALL incoming branches to complete before proceeding |
+| `MaestroOr` | No | Sync gate — proceeds when ANY one incoming branch completes; use when parallel branches are optional |
+| `MaestroSetProcessVariable` | No | Sets a process variable (hardcoded, arithmetic, PHP function, or SPV plugin) |
+| `MaestroSpawnSubFlow` | No | Spawns a child workflow from another template |
+
+**Submodule task types:**
+
+| Plugin ID | Module | Interactive | Purpose |
+|---|---|---|---|
+| `MaestroWebform` | maestro_webform | Yes | Renders a Drupal Webform v6 for user completion inside the workflow |
+| `MaestroEcaEventTask` | maestro_eca_task | No | Triggers an ECA event |
+| `MaestroAITask` | maestro_ai_task | No | AI prompt execution (experimental) |
+
+---
+
+### Schema: Template-level structure
+
+```yaml
+id: machine_name
+label: 'Human Label'
+description: 'Description'
+default_workflow_timeline_stage_count: 2
+show_details: true
+validated: true                 # must be true for the template to spawn processes
+variables:
+  variable_name:
+    variable_id: variable_name
+    variable_value: '0'
+tasks:
+  task_id:
+    id: task_id
+    tasktype: MaestroWebform        # plugin ID from table above
+    label: 'Task Label'
+    nextstep: next_task_id
+    nextfalsestep: false_task_id    # MaestroIf only; omit or leave empty otherwise
+    assignby: fixed                 # fixed: use `assigned` field; variable: use `assignto` field with a process variable name
+    assignto: ''                    # process variable name when assignby is variable
+    assigned: 'user:fixed:username,role:fixed:rolename'  # used when assignby is fixed
+    handler: ''                     # PHP function name or URL — task-type-specific
+    runonce: false
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 1
+    workflow_status_stage_message: 'Stage Label'
+    data: {}                        # task-type-specific block; see below
+    notifications:
+      notification_assignments: 'user:variable:initiator:assignment'
+      assignment_enabled: false
+      reminder_enabled: false
+      escalation_enabled: false
+      escalation_after: 0
+      reminder_after: 0
+      notification_assignment_subject: ''
+      notification_reminder_subject: ''
+      notification_escalation_subject: ''
+```
+
+---
+
+### Schema: Task `data` block by type
+
+> Note: `nextstep`, `nextfalsestep`, `assignby`, `assignto`, `assigned`, `handler`, `label`, and `notifications` are task-level keys, not inside `data`. The `data` block contains only task-type-specific configuration.
+
+**MaestroWebform:**
+```yaml
+data:
+  unique_id: submission_identifier
+  webform_machine_name: webform_machine_name
+  show_edit_form: true
+  use_nodes_attached: false
+  webform_nodes_attached_variable: ''
+  webform_nodes_attached_to: ''
+  skip_webform_handlers: true      # always true on non-initiating tasks to prevent recursive spawning
+  redirect_to: taskconsole
+  modal: notmodal                  # modal or notmodal
+```
+
+**MaestroInteractive:**
+```yaml
+# handler at task level — bare globally-callable PHP function name (not a method or service)
+handler: my_module_approval_form
+data:
+  modal: modal                     # modal or notmodal
+  redirect_to: taskconsole
+```
+
+**MaestroIf:**
+```yaml
+data:
+  if:
+    method: bylasttaskstatus       # bylasttaskstatus or byvariable
+    variable: variable_name        # used when method is byvariable
+    operator: '='                  # =, !=, <, > — used when method is byvariable
+    variable_value: ''             # comparison value — used when method is byvariable
+    status: '1'                    # '1' = task completed/accepted (true branch); '0' = rejected/false branch
+```
+
+**MaestroSetProcessVariable:**
+```yaml
+data:
+  spv:
+    variable: variable_name
+    method: hardcoded              # hardcoded, addsubtract, bycontentfunction, byplugin
+    variable_value: '0'
+    spv_plugin: ''                 # plugin ID when method is byplugin
+```
+
+**MaestroBatchFunction:**
+```yaml
+# handler at task level — bare globally-callable PHP function name (not a method or service)
+handler: my_module_batch_function_name
+# data block not required for basic batch functions
+```
+
+**MaestroContentType:**
+```yaml
+# handler at task level — /node/add/{bundle}?maestro=1
+handler: '/node/add/my_bundle?maestro=1'
+data:
+  unique_id: node_identifier
+  content_type: bundle_name
+  redirect_to: taskconsole
+  save_edit_later: 1
+  link_to_edit: 0
+  show_maestro_buttons_on_view: 0
+  accept_label: ''
+  reject_label: ''
+  accept_redirect_to: ''
+  reject_redirect_to: ''
+  supply_maestro_ids_in_url: 0
+```
+
+**MaestroSpawnSubFlow:**
+```yaml
+# No handler required
+data:
+  # No top-level data keys — sub-flow settings are configured via the task edit form
+  # maestro_template: set via task edit form — the template machine name to spawn
+  # variables: checkboxes in task edit form select which parent variables to copy to child process (prefixed with maestro_parent_)
+```
+
+---
+
+### Assignment format
+
+The `assigned` field and `notification_assignments` field use a comma-separated list of directives:
+
+| Format | Meaning |
+|---|---|
+| `user:fixed:username` | Assign to a specific Drupal user by username |
+| `role:fixed:role_machine_name` | Assign to all users with a given role |
+| `user:variable:process_var` | Assign to the user whose name is stored in a process variable |
+| `role:variable:process_var` | Assign to the role whose name is stored in a process variable |
+
+For `notification_assignments`, append the notification type as a fourth segment:
+```
+user:variable:initiator:assignment
+user:fixed:admin:reminder
+role:fixed:manager:escalation
+```
+
+---
+
+### Webform-initiated workflow pattern
+
+Most workflows that begin with a webform use this pattern:
+
+1. The webform's `handlers:` section includes a `maestro` handler (the MaestroWebformHandler)
+2. The handler spawns a named template when the submission reaches the `completed` state
+3. The spawned workflow accesses the submission via `unique_id` on `MaestroWebform` tasks
+4. All `MaestroWebform` tasks within the workflow set `skip_webform_handlers: true` to prevent recursive spawning
+
+**Webform handler YAML block** (inside `webform.webform.{id}.yml`):
+```yaml
+handlers:
+  spawn_maestro_workflow:
+    id: maestro
+    handler_id: spawn_maestro_workflow
+    label: 'Spawn Maestro Workflow'
+    status: true
+    settings:
+      maestro_template: template_machine_name
+      maestro_message_success: 'Your submission has been received.'
+      maestro_message_failure: 'Something went wrong. Please try again.'
+      maestro_spawn_states:
+        completed: completed
+        draft_created: 0
+        draft_updated: 0
+```
+
+---
+
+### Webform v6 integration contract
+
+- Field discovery: `GET /webform_rest/{webform_id}/fields`
+- Submission: `POST /webform_rest/submit`
+- Frontend renders via `WebformField.tsx` — supported field types: textfield, textarea, select, checkboxes, radios, date, email, number, file
+- File upload: `POST /file/upload/webform_submission/{bundle}/{field}` → returns `fid` used in submission payload
+- `webform_machine_name` in task data must exactly match the Drupal webform config entity `id`
+
+---
+
+### Canonical example references
+
+These installed example modules are the authoritative style guide for generated workflows. When building a new workflow, follow their patterns exactly.
+
+| Example template ID | Module | Demonstrates |
+|---|---|---|
+| `form_approval_flow` | `maestro_form_approval_example` | Linear approval chain, SPV flags, conditional rejection loop back to submitter, stage/status tracking, MaestroInteractive, MaestroBatchFunction, notifications via process variable |
+| `maestro_ai_expense_rcpt_checking_simple` | `maestro_ai_task_vision_example` | Webform-initiated flow, MaestroWebform tasks, skip_webform_handlers pattern, process variable-driven node attachment |

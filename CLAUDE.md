@@ -129,3 +129,63 @@ For backend operations (install steps, Drush commands, module management):
 
 For frontend operations (env configuration, build, status):
 → See `NAS_frontend/CLAUDE.md`
+
+---
+
+## Workflow Development
+
+Workflow modules are built from spec files in `NAS/specs/`. The Superpowers brainstorming skill produces the spec; `nas_workflow_build` executes the build into the running NAS stack.
+
+For Maestro task types, schema, assignment format, and generation patterns:
+→ See `NAS_base/CLAUDE.md` — Maestro Domain Reference section
+
+---
+
+### nas_workflow_build
+
+Build a Maestro workflow module from an approved spec and install it into the running NAS stack.
+
+**When to use:** After Superpowers brainstorming has produced a spec in `NAS/specs/` and an implementation plan exists. Stack must be healthy — run `nas_status` first. The spec file path is provided by the caller (e.g., `specs/leave-request.md`); if no spec exists, run the Superpowers brainstorming skill first.
+
+**What it produces:**
+
+A custom Drupal module at `NAS_base/drupal/web/modules/custom/{module_name}/`:
+
+| File | Purpose |
+|---|---|
+| `{module_name}.info.yml` | Module definition; declares dependencies on `maestro`, `maestro_webform`, `webform` |
+| `{module_name}.install` | `hook_install()` for any programmatic setup not covered by config |
+| `{module_name}.module` | Glue code — batch functions, interactive task handlers, SPV plugins, hooks |
+| `config/install/maestro.maestro_template.{id}.yml` | Maestro workflow template config |
+| `config/install/webform.webform.{id}.yml` | Webform definition(s) including the Maestro spawn handler |
+| `config/install/*.yml` | Any additional config (views, roles, content types if needed) |
+| `CLAUDE.md` | Original spec + every generation decision made + iteration changelog |
+
+**Sequence:**
+
+1. Run `nas_status` — confirm all containers healthy before proceeding
+2. Read the spec from `NAS/specs/{spec_file}.md`
+3. Consult `NAS_base/CLAUDE.md` Maestro Domain Reference for task types, schema, and patterns
+4. Generate all module files following the canonical example style: use `form_approval_flow` as the reference for approval chains with interactive tasks; use `maestro_ai_expense_rcpt_checking_simple` for webform-initiated flows with MaestroWebform tasks
+5. Enable: `nas_drush command="pm:enable {module_name} --yes"` (see `nas_drush` in `NAS_base/CLAUDE.md`)
+6. Rebuild cache: `nas_drush command="cache:rebuild"` (see `nas_drush` in `NAS_base/CLAUDE.md`)
+7. Verify template installed: `curl -s http://localhost:8080/jsonapi/maestro_template/maestro_template | grep -w "{template_id}"`
+8. Report: module name, template ID, initiating webform path
+
+**On failure at steps 5–7:** run `nas_logs service=php` to diagnose YAML parse errors or missing dependencies before retrying.
+
+**Module's embedded `CLAUDE.md` must contain:**
+- The original spec verbatim
+- Every design decision: assignment strategy chosen, variable names and their purpose, branch logic rationale
+- Iteration changelog: date, what changed, why
+
+**Iteration pattern:**
+
+When a change is requested on an existing workflow module:
+1. Read `NAS_base/drupal/web/modules/custom/{module_name}/CLAUDE.md` for full context
+2. Make targeted edits to the relevant files within the module
+3. Re-import or rebuild as needed (see `nas_drush` in `NAS_base/CLAUDE.md`):
+   - Config files changed (`config/install/*.yml`): `nas_drush command="config:import --yes"`
+   - PHP-only change (`.module` or `.install`): skip to step 4
+4. Rebuild cache: `nas_drush command="cache:rebuild"` (see `nas_drush` in `NAS_base/CLAUDE.md`)
+5. Update the module's `CLAUDE.md` changelog with the change and rationale
