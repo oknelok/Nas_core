@@ -383,8 +383,12 @@ The `assigned` field and `notification_assignments` field use a comma-separated 
 |---|---|
 | `user:fixed:username` | Assign to a specific Drupal user by username |
 | `role:fixed:role_machine_name` | Assign to all users with a given role |
-| `user:variable:process_var` | Assign to the user whose name is stored in a process variable |
+| `user:variable:process_var` | Assign to the user whose username is stored in a process variable |
 | `role:variable:process_var` | Assign to the role whose name is stored in a process variable |
+
+**Critical:** The engine reads production assignments **only from the `assigned` field**. The `assignby` and `assignto` YAML fields do not drive production assignments — they are used by the visual editor UI. An empty `assigned` field on an interactive task leaves it unassigned.
+
+**`initiator` variable:** If a template declares a variable named `initiator`, Maestro automatically sets it to the spawning user's account name at process creation. For workflows spawned by anonymous users where a real user is created mid-workflow (e.g. a batch function creates an account), update `initiator` explicitly: `MaestroEngine::setProcessVariable('initiator', $user->getAccountName(), $processID)`. Then assign requestor tasks with `assigned: 'user:variable:initiator'`.
 
 For `notification_assignments`, append the notification type as a fourth segment:
 ```
