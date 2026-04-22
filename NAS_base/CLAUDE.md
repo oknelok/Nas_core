@@ -223,6 +223,13 @@ docker compose logs --tail={lines} {service}
 id: machine_name
 label: 'Human Label'
 description: 'Description'
+app_group: 0
+pan_left: 0
+pan_top: 0
+zoom: 1.0
+private: false
+canvas_height: 1200             # visual editor canvas dimensions — required
+canvas_width: 2200
 default_workflow_timeline_stage_count: 2
 show_details: true
 validated: true                 # must be true for the template to spawn processes
@@ -237,8 +244,10 @@ tasks:
     label: 'Task Label'
     nextstep: next_task_id
     nextfalsestep: false_task_id    # MaestroIf only; omit or leave empty otherwise
+    top: '50'                       # REQUIRED: pixel position for visual editor — omitting crashes the editor
+    left: '50'                      # REQUIRED: pixel position for visual editor — omitting crashes the editor
     assignby: fixed                 # fixed: use `assigned` field; variable: use `assignto` field with a process variable name
-    assignto: ''                    # process variable name when assignby is variable
+    assignto: ''                    # process variable name when assignby is variable; use 'engine' on MaestroStart
     assigned: 'user:fixed:username,role:fixed:rolename'  # used when assignby is fixed
     handler: ''                     # PHP function name or URL — task-type-specific
     runonce: false
@@ -246,6 +255,11 @@ tasks:
     participate_in_workflow_status_stage: true
     workflow_status_stage_number: 1
     workflow_status_stage_message: 'Stage Label'
+    raphael: ''                     # visual editor rendering data — set empty string
+    to: ''                          # visual editor connector data — set empty string
+    pointedfrom: ''                 # visual editor connector data — set empty string
+    falsebranch: ''                 # visual editor connector data — set empty string
+    lines: {  }                     # visual editor connector data — set empty map
     data: {}                        # task-type-specific block; see below
     notifications:
       notification_assignments: 'user:variable:initiator:assignment'
