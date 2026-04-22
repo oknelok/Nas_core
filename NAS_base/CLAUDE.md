@@ -242,7 +242,7 @@ tasks:
     id: task_id
     tasktype: MaestroWebform        # plugin ID from table above
     label: 'Task Label'
-    nextstep: next_task_id
+    nextstep: next_task_id          # comma-separated list for parallel spawn: 'task_a,task_b,task_c'
     nextfalsestep: false_task_id    # MaestroIf only; omit or leave empty otherwise
     top: '50'                       # REQUIRED: pixel position for visual editor — omitting crashes the editor
     left: '50'                      # REQUIRED: pixel position for visual editor — omitting crashes the editor
@@ -431,6 +431,9 @@ handlers:
 - Frontend renders via `WebformField.tsx` — supported field types: textfield, textarea, select, checkboxes, radios, date, email, number, file
 - File upload: `POST /file/upload/webform_submission/{bundle}/{field}` → returns `fid` used in submission payload
 - `webform_machine_name` in task data must exactly match the Drupal webform config entity `id`
+- When a webform uses the Maestro spawn handler, the submission is stored in the process under `unique_id: submission`. All subsequent MaestroWebform tasks that access the same spawned submission must use `unique_id: submission`. Only use a different unique_id if you are introducing a brand-new, separate webform submission in the workflow.
+- SPV tasks reading from the spawned submission use `entity_identifier: submission` (matching the unique_id above)
+- `MaestroEngine::getEntityIdentiferByUniqueID($processID, 'submission')` retrieves the submission entity ID from PHP code — note argument order: process ID first, unique_id string second
 
 ---
 
