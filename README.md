@@ -17,6 +17,18 @@ A portable, containerised full-stack platform for building Drupal-powered workfl
 
 ---
 
+## Specification Driven Development
+ - NAS/specs houses the location for .md files which store specifications.
+ - Read the README.md file in the specs folder to learn how to structure your specifications.
+ - The more detailed your specifications are, the better your NAS deployment will be.
+
+ - You create a net-new NAS-supported workflow pattern, forms and glue logic by creating a new [your-specification].md file
+ - The resulting workflow solutuion will have a machine name of [your-specification] - The prefix of your .md file.
+ - Add as many specification files as you see fit and let NAS build it for you.
+
+---
+
+
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) 4.22 or later (includes Docker Compose v2.20+)
