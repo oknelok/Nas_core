@@ -1,3 +1,5 @@
+name: nas_base
+
 include:
   - ./NAS_base/docker-compose.yml
 
