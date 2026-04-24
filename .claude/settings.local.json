@@ -9,7 +9,11 @@
       "Bash(curl -s \"https://git.drupalcode.org/project/maestro/-/raw/4.x/modules/maestro_ai_task/modules/maestro_ai_task_vision_example/config/install/webform.webform.simple_expense_report_example.yml\")",
       "Bash(curl -s \"https://git.drupalcode.org/project/maestro/-/raw/4.x/modules/examples/maestro_form_approval_example/config/install/webform.webform.maestro_form_approval_example.yml\")",
       "Bash(curl -s \"https://git.drupalcode.org/api/v4/projects/project%2Fmaestro/repository/tree?path=modules/examples/maestro_form_approval_example/config/install&ref=4.x\")",
-      "Bash(git *)"
+      "Bash"
+    ],
+    "deny": [
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
