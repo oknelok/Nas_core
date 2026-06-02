@@ -1,0 +1,30 @@
+{
+  "project_id": "nas_machine_name",
+  "version": "1.0.0",
+  "maestro_template": {
+    "variables": { "var_name": "initial_value" },
+    "tasks": [
+      {
+        "id": "task_machine_name",
+        "type": "MaestroWebform|MaestroIf|MaestroBatchFunction|...",
+        "label": "Human Label",
+        "assigned": "user:fixed:admin",
+        "data": { "webform_machine_name": "form_id" },
+        "next_step": "next_id", 
+        "next_false_step"
+      }
+    ]
+  },
+  "webforms": [
+    {
+      "id": "form_id",
+      "fields": [
+        { "name": "field_id", "type": "textfield", "required": true }
+      ]
+    }
+  ],
+  "api_mapping": {
+    "initiator_source": "drupal_user|anonymous",
+    "required_process_variables": ["initiator", "submission_id"]
+  }
+}

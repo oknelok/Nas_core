@@ -9,8 +9,13 @@ Specs are produced through the Superpowers brainstorming process:
 1. Describe the workflow need in natural language (images of flow diagrams are also accepted)
 2. Superpowers brainstorming refines the intent through clarifying questions
 3. The resulting spec is saved here as `{workflow-name}.md`
-4. Superpowers writing-plans produces an implementation plan
-5. Run `nas_workflow_build` to build the module into the running stack
+4. (Architect): Instead of a text-based "writing plan," Claude must output the .json Manifest.
+   - Run `nas_workflow_compile` to generate `{workflow-name}.json`.
+   - This step validates logic (e.g., "Are there any dead ends?") and ensures the schema matches the Maestro Domain Reference.
+5. Optional by asking the user if required: Superpowers writing-plans produces an implementation plan
+6. (Backend/Frontend): Claude builds the module by "reading the manifest" in two distinct passes.
+7. (Auditor): Run nas_status and nas_frontend_status to verify the "connective tissue."
+   - Run `nas_workflow_build` using the `.json` file as the source of truth.
    → See `NAS/CLAUDE.md` — nas_workflow_build tool for the full sequence
 
 Specs can also be started inline in chat and saved here during the brainstorming session.

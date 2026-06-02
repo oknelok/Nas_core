@@ -21,6 +21,26 @@ Backend-only Drush and step operations run from `NAS_base/`.
 
 ## Tools
 
+### nas_workflow_compile
+
+Act as the **NAS Architect Agent**. Transform a Markdown specification into a deterministic JSON Manifest.
+
+**When to use:** After the Superpowers brainstorming is complete and `{workflow-name}.md` is saved.
+
+**Logic:**
+1. Read `NAS/specs/{name}.md` and the **Maestro Domain Reference** in `NAS_base/CLAUDE.md`.
+2. Generate `NAS/specs/{name}.json` following the `Maestro v4` schema.
+3. **Mandatory Validations:**
+   - Every `MaestroWebform` task must have a `unique_id` (default to 'submission').
+   - Every `MaestroIf` task must have both `nextstep` and `nextfalsestep`.
+   - Every task must have `top` and `left` coordinates (integers as strings).
+   - If a flow starts via Webform, verify the `MaestroWebformHandler` is defined in the Webform YAML logic.
+   - Flag any "Dead End" tasks (non-End tasks with no `nextstep`).
+
+**Output:** A JSON manifest that serves as the single source of truth for the build phase.
+
+---
+
 ### nas_status
 
 Check health of all containers and services across the full stack.
@@ -143,9 +163,31 @@ For Maestro task types, schema, assignment format, and generation patterns:
 
 ### nas_workflow_build
 
-Build a Maestro workflow module from an approved spec and install it into the running NAS stack.
+Build a Maestro workflow module by executing a multi-pass build driven strictly by the JSON Manifest.
 
-**When to use:** After Superpowers brainstorming has produced a spec in `NAS/specs/` and an implementation plan exists. Stack must be healthy — run `nas_status` first. The spec file path is provided by the caller (e.g., `specs/leave-request.md`); if no spec exists, run the Superpowers brainstorming skill first.
+**When to use:** After `nas_workflow_compile` has produced a valid `{name}.json`.
+
+**The Sequence:**
+
+1. **Pass 1: Backend Mason Persona**
+   - Read `NAS/specs/{name}.json`.
+   - Generate `NAS_base/drupal/web/modules/custom/nas_{name}/`.
+   - Strictly map the JSON `tasks` to Maestro YML files.
+   - **Fix (Security):** Ensure `assigned` strings match the JSON exactly. Use the `nas_bridge` logic for entity identifiers.
+   - Run `nas_drush command="pm:enable nas_{name} --yes"` and `cache:rebuild`.
+
+2. **Pass 2: Frontend Weaver Persona**
+   - Read `NAS/specs/{name}.json`.
+   - Generate Next.js routes in `NAS_frontend/pages/`.
+   - **Fix (April 13 Issue):** Every form submission *must* include `maestro_queue_id`, `maestro_process_id`, and `maestro_token` from the JSON API context.
+   - Ensure form fields match the Webform IDs in the Manifest.
+
+3. **Pass 3: Auditor Persona (Validation)**
+   - Run `nas_status` to ensure containers are healthy.
+   - Run `nas_frontend_status` to verify Next.js can reach Drupal.
+   - Verify that the template was actually imported: `curl -s http://localhost:8080/jsonapi/maestro_template/maestro_template | grep nas_{name}`.
+
+**Returns:** A "Success" report or a specific failure log for the Persona that failed.
 
 **What it produces:**
 
@@ -164,7 +206,7 @@ A custom Drupal module at `NAS_base/drupal/web/modules/custom/{module_name}/`:
 **Sequence:**
 
 1. Run `nas_status` — confirm all containers healthy before proceeding
-2. Read the spec from `NAS/specs/{spec_file}.md`
+2. Read the JSON manifest from `NAS/specs/{spec_file}.json`
 3. Consult `NAS_base/CLAUDE.md` Maestro Domain Reference for task types, schema, and patterns
 4. Generate all module files following the canonical example style: use `form_approval_flow` as the reference for approval chains with interactive tasks; use `maestro_ai_expense_rcpt_checking_simple` for webform-initiated flows with MaestroWebform tasks
 5. Enable: `nas_drush command="pm:enable {module_name} --yes"` (see `nas_drush` in `NAS_base/CLAUDE.md`)
@@ -189,3 +231,24 @@ When a change is requested on an existing workflow module:
    - PHP-only change (`.module` or `.install`): skip to step 4
 4. Rebuild cache: `nas_drush command="cache:rebuild"` (see `nas_drush` in `NAS_base/CLAUDE.md`)
 5. Update the module's `CLAUDE.md` changelog with the change and rationale
+
+---
+
+## Persona Guardrails
+
+To ensure deterministic builds and specification compliance, Claude must adhere to these persona rules during workflow development:
+
+### Architect Agent Rules
+- **Manifest is Law:** Do not include speculative tasks. If it's not in the MD spec, do not put it in the JSON.
+- **Connectivity First:** Ensure `initiator` variables are declared if the flow involves requestor tasks.
+
+### Backend Mason Rules
+- **No Vibe-Coding:** Only write PHP and YML that matches the JSON Manifest.
+- **Schema Strictness:** Use `skip_webform_handlers: true` for all non-initiating MaestroWebform tasks.
+
+### Frontend Weaver Rules
+- **State Preservation:** You are responsible for ensuring the Maestro state (Token/Queue ID) is passed through the Next.js API proxy.
+- **Field Alignment:** If the Manifest says a field is `textfield`, do not use a `textarea` in React.
+
+### Auditor Rules
+- **Zero Trust:** Do not assume a task exists just because the Backend Mason said it was created. Verify via JSON:API.
