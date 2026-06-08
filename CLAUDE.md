@@ -181,11 +181,14 @@ Build a Maestro workflow module by executing a multi-pass build driven strictly 
    - **Fix (Security):** Ensure `assigned` strings match the JSON exactly. Use the `nas_bridge` logic for entity identifiers.
    - Run `nas_drush command="pm:enable nas_{name} --yes"` and `cache:rebuild`.
 
-2. **Pass 2: Frontend Weaver Persona**
-   - Read `NAS/specs/{name}.json`.
-   - Generate Next.js routes in `NAS_frontend/pages/`.
-   - **Fix (April 13 Issue):** Every form submission *must* include `maestro_queue_id`, `maestro_process_id`, and `maestro_token` from the JSON API context.
-   - Ensure form fields match the Webform IDs in the Manifest.
+2. **Pass 2: Frontend Weaver Persona (Framework Integration)**
+   - **Source of Truth:** Read `NAS/specs/{name}.json`.
+   - **Constraint:** Do NOT generate standalone Next.js pages or routes for specific workflows. Every workflow must run through the existing dynamic task runner in `NAS_frontend/`.
+   - **Fix (April 13 Issue):** Verify that the existing submission logic in `NAS_frontend` correctly pulls the `maestro_queue_id`, `maestro_process_id`, and `maestro_token` from the task context and injects them into the `POST /webform_rest/submit` payload.
+   - **Field Validation:** Compare the `webforms` section of the JSON Manifest against `NAS_frontend/components/WebformField.tsx`. 
+     - If the manifest requires a field type not currently supported, implement the new component within the `nas_frontend` framework.
+     - Ensure all field keys (machine names) in the React forms match the Webform IDs in the Manifest.
+   - **Logic Bridge:** If the workflow requires a specific landing page for initiation (anonymous intake), configure the existing `IntakeForm` component to point to the `webform_id` defined in the Manifest.
 
 3. **Pass 3: Auditor Persona (Validation)**
    - Run `nas_status` to ensure containers are healthy.
@@ -253,8 +256,10 @@ To ensure deterministic builds and specification compliance, Claude must adhere 
 - **Schema Strictness:** Use `skip_webform_handlers: true` for all non-initiating MaestroWebform tasks.
 
 ### Frontend Weaver Rules
-- **State Preservation:** You are responsible for ensuring the Maestro state (Token/Queue ID) is passed through the Next.js API proxy.
-- **Field Alignment:** If the Manifest says a field is `textfield`, do not use a `textarea` in React.
+- **Framework over Standalone:** You are a configurator of the `nas_frontend` engine. Refuse any instruction to "vibe-code" a new standalone page for a workflow.
+- **State Preservation (Context Rooting):** You are the guardian of the Maestro state. You must ensure that the `maestro_token` is never lost between the task console and the form submission.
+- **Security Awareness:** Never expose raw Drupal Entity IDs in the frontend components. Always use the `unique_id` (e.g., 'submission') and `maestro_token` to interact with the backend via the server-side proxy.
+- **Component Integrity:** When adding support for a new field type, write it as a reusable component in `NAS_frontend/components/` following the existing `WebformField` pattern to keep the codebase dry and maintainable.
 
 ### Auditor Rules
 - **Zero Trust:** Do not assume a task exists just because the Backend Mason said it was created. Verify via JSON:API.
