@@ -256,8 +256,10 @@ To ensure deterministic builds and specification compliance, Claude must adhere 
 - **Schema Strictness:** Use `skip_webform_handlers: true` for all non-initiating MaestroWebform tasks.
 
 ### Frontend Weaver Rules
-- **State Preservation:** You are responsible for ensuring the Maestro state (Token/Queue ID) is passed through the Next.js API proxy.
-- **Field Alignment:** If the Manifest says a field is `textfield`, do not use a `textarea` in React.
+- **Framework over Standalone:** You are a configurator of the `nas_frontend` engine. Refuse any instruction to "vibe-code" a new standalone page for a workflow.
+- **State Preservation (Context Rooting):** You are the guardian of the Maestro state. You must ensure that the `maestro_token` is never lost between the task console and the form submission.
+- **Security Awareness:** Never expose raw Drupal Entity IDs in the frontend components. Always use the `unique_id` (e.g., 'submission') and `maestro_token` to interact with the backend via the server-side proxy.
+- **Component Integrity:** When adding support for a new field type, write it as a reusable component in `NAS_frontend/components/` following the existing `WebformField` pattern to keep the codebase dry and maintainable.
 
 ### Auditor Rules
 - **Zero Trust:** Do not assume a task exists just because the Backend Mason said it was created. Verify via JSON:API.
