@@ -13,8 +13,9 @@ export default function WebformField({ fieldKey, field, value, onChange }: Props
   const options = field['#options'] ?? {}
   const disabled = field['#disabled'] === true
 
-  // Fields with #access: false are hidden from the user entirely.
+  // Suppress fields that have no user-facing interaction.
   if (field['#access'] === false) return null
+  if (field['#type'] === 'hidden') return null
 
   function renderInput() {
     switch (field['#type']) {
@@ -121,6 +122,29 @@ export default function WebformField({ fieldKey, field, value, onChange }: Props
         )
       case 'webform_image_file':
       case 'managed_file': {
+        if (field['#multiple']) {
+          const existingIds = Array.isArray(value) ? (value as string[]).filter(Boolean) : []
+          return (
+            <div>
+              {existingIds.map(fid => (
+                <div key={fid}>
+                  <FileAttachment fileId={fid} />
+                </div>
+              ))}
+              {!disabled && (
+                <input
+                  id={fieldKey}
+                  type="file"
+                  multiple
+                  onChange={e => {
+                    const files = e.target.files
+                    onChange(fieldKey, files && files.length > 0 ? Array.from(files) : null)
+                  }}
+                />
+              )}
+            </div>
+          )
+        }
         const existingFileId = typeof value === 'string' && value ? value : null
         return (
           <div>

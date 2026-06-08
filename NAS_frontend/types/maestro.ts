@@ -50,6 +50,7 @@ export interface WebformFieldDef {
   '#required'?: boolean
   '#disabled'?: boolean
   '#access'?: boolean
+  '#multiple'?: boolean
   '#options'?: Record<string, string>
   '#default_value'?: unknown
   '#webform_key': string
@@ -80,5 +81,5 @@ export interface FileEntityResponse {
 }
 
 export interface WebformSubmissionResponse {
-  data: Record<string, string>
+  data: Record<string, unknown>
 }
