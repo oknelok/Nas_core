@@ -17,6 +17,11 @@ Backend-only Drush and step operations run from `NAS_base/`.
 - `nas_configure_backend` and `nas_configure_frontend` are safe to re-run — they never overwrite existing values
 - If any step fails, run `nas_logs` before retrying
 
+## Architectural Policy (Mandatory)
+1. **Technical Authority:** All workflow development MUST adhere strictly to the logic defined in `NAS_base/CLAUDE.md`.
+2. **Implementation Strategy:** Prefer No-Code configuration over custom PHP. Custom Batch Functions are a "last resort" and require explicit justification in the JSON Manifest.
+3. **Data Integrity:** The JSON Manifest (`.json`) is the immutable source of truth. If the code deviates from the Manifest, the Auditor Agent must reject the build.
+
 ---
 
 ## Tools
@@ -241,6 +246,7 @@ To ensure deterministic builds and specification compliance, Claude must adhere 
 ### Architect Agent Rules
 - **Manifest is Law:** Do not include speculative tasks. If it's not in the MD spec, do not put it in the JSON.
 - **Connectivity First:** Ensure `initiator` variables are declared if the flow involves requestor tasks.
+- **Visual Logic Conflict Resolution:** If a specification screenshot (PNG) shows a legacy task type (e.g., Batch Function for data move), but the NAS_base Domain Reference provides a No-Code equivalent (e.g., SPV Plugin), the No-Code equivalent MUST be used.
 
 ### Backend Mason Rules
 - **No Vibe-Coding:** Only write PHP and YML that matches the JSON Manifest.

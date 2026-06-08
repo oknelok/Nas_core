@@ -313,7 +313,15 @@ data:
     status: '1'                    # '1' = task completed/accepted (true branch); '0' = rejected/false branch
 ```
 
-**MaestroSetProcessVariable:**
+**MaestroSetProcessVariable (Authoritative v4 Logic):**
+
+- **Usage:** Always use this to move data from a Webform submission to a Process Variable. You can use this to set values from content or hardcoded sources.
+- **Method Selection:**
+  - **Webform Data:** Set `method` to `maestro_webform_spv_fetch_submission_value`.
+  - **Entity Data:** Set `method` to `maestro_entity_identifiers` (or the specific core entity plugin).
+- **Data Configuration:**
+  - Set `variable_value` to `{unique_id},{field_machine_name}`.
+  - *Example:* `submission,pd_manager`
 ```yaml
 data:
   spv:
