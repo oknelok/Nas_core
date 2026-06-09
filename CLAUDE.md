@@ -32,9 +32,12 @@ Backend-only Drush and step operations run from `NAS_base/`.
 
 **Logic:**
 1. **Technical Analysis:** Read the `.md` spec and any images/screenshots provided. Identify technical ambiguities required for the Maestro v4 schema (e.g., "I see 'Gate 1 Review'—what Drupal role should this map to?").
-2. **Technical Interview:** Instead of generating a file immediately, **stop and ask the user these questions in the chat.** 
-   - Propose stack-native solutions for each question (e.g., "I suggest we create a role called `nas_gate1_reviewer`").
-   - Explain *why* you are asking (e.g., "Maestro requires a specific assignment string in the `assigned` field").
+ 2. **Technical Interview (Sequential):** Ask questions **one at a time**. Do not batch.
+     - Format each as: `Interview Question [N]: [topic]`
+     - State your proposed stack-native solution first, then ask for confirmation or correction.
+     - After the user answers: acknowledge it, record the decision, then ask the next question.
+     - Do not ask the next question in the same message as the current one.
+     - Only proceed to step 3 (Compilation) after every question has a confirmed answer.
 3. **Compilation:** Only after the user has answered/approved the technical design, execute the tool to generate `NAS/specs/{name}.json`.
 4. **Infrastructure Declaration:** You must identify all Drupal entities required to support the flow that do not exist in the base stack:
    - **Roles:** Define the machine names for all needed roles (e.g., `nas_manager`).
