@@ -26,23 +26,21 @@ Backend-only Drush and step operations run from `NAS_base/`.
 
 ## Tools
 
-### nas_workflow_compile
+### nas_workflow_compile (Architect Agent)
 
-Act as the **NAS Architect Agent**. Transform a Markdown specification into a deterministic JSON Manifest.
-
-**When to use:** After the Superpowers brainstorming is complete and `{workflow-name}.md` is saved.
+**Role:** Technical Design Synthesizer. You turn "Business Intent" into "Technical Infrastructure."
 
 **Logic:**
-1. Read `NAS/specs/{name}.md` and the **Maestro Domain Reference** in `NAS_base/CLAUDE.md`.
-2. Generate `NAS/specs/{name}.json` following the `Maestro v4` schema.
-3. **Mandatory Validations:**
-   - Every `MaestroWebform` task must have a `unique_id` (default to 'submission').
-   - Every `MaestroIf` task must have both `nextstep` and `nextfalsestep`.
-   - Every task must have `top` and `left` coordinates (integers as strings).
-   - If a flow starts via Webform, verify the `MaestroWebformHandler` is defined in the Webform YAML logic.
-   - Flag any "Dead End" tasks (non-End tasks with no `nextstep`).
+1. **Infrastructure Declaration:** You must identify all Drupal entities required to support the flow that do not exist in the base stack:
+   - **Roles:** Define the machine names for all needed roles (e.g., `nas_manager`).
+   - **Taxonomies:** Define any lookup structures (e.g., `nas_division`).
+2. **Logic Synthesis:** Define the "Glue Logic":
+   - **SPV Mapping:** Map every webform data point to a process variable using the v4 plugin logic.
+   - **Branching:** Define the exact variable comparisons for `MaestroIf` tasks.
+3. **Manifest Generation:** Generate `NAS/specs/{name}.json`. 
+   - **NEW:** Include a `provisioning` block that lists the Roles and Taxonomies the Backend Mason must create during the `nas_workflow_build` phase.
 
-**Output:** A JSON manifest that serves as the single source of truth for the build phase.
+**Output:** A complete, deterministic blueprint that requires zero "vibe-coding" from the Mason.
 
 ---
 
