@@ -12,7 +12,7 @@ export default function TaskPage() {
   const { token } = router.query as { token?: string }
 
   const [formData, setFormData] = useState<Record<string, unknown>>({})
-  const [fileInputs, setFileInputs] = useState<Record<string, File>>({})
+  const [fileInputs, setFileInputs] = useState<Record<string, File | File[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -57,7 +57,9 @@ export default function TaskPage() {
   }, [submissionData])
 
   function handleFieldChange(key: string, value: unknown) {
-    if (value instanceof File) {
+    if (Array.isArray(value) && value.every(v => v instanceof File)) {
+      setFileInputs(prev => ({ ...prev, [key]: value as File[] }))
+    } else if (value instanceof File) {
       setFileInputs(prev => ({ ...prev, [key]: value }))
     } else if (value === null) {
       setFileInputs(prev => { const next = { ...prev }; delete next[key]; return next })
@@ -72,11 +74,16 @@ export default function TaskPage() {
     setSubmitting(true)
     setSubmitError(null)
 
-    const resolvedFiles: Record<string, number> = {}
-    for (const [key, file] of Object.entries(fileInputs)) {
+    const resolvedFiles: Record<string, number | number[]> = {}
+    for (const [key, fileOrFiles] of Object.entries(fileInputs)) {
       try {
-        const fid = await drupalFileUpload('webform_submission', webformId, key, file)
-        resolvedFiles[key] = fid
+        if (Array.isArray(fileOrFiles)) {
+          resolvedFiles[key] = await Promise.all(
+            fileOrFiles.map(f => drupalFileUpload('webform_submission', webformId, key, f))
+          )
+        } else {
+          resolvedFiles[key] = await drupalFileUpload('webform_submission', webformId, key, fileOrFiles)
+        }
       } catch {
         setSubmitError('File upload failed. Please try again.')
         setSubmitting(false)
